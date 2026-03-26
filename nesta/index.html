@@ -1,120 +1,189 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Photo Booth</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Photobooth</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #111;
-      color: white;
-      text-align: center;
-    }
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #111;
+    color: white;
+}
 
-    h2 {
-      margin-top: 20px;
-    }
+/* HALAMAN */
+.page {
+    display: none;
+}
 
-    video, canvas {
-      width: 90%;
-      max-width: 350px;
-      border-radius: 12px;
-    }
+.active {
+    display: block;
+}
 
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background: #ff4d6d;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+/* FRAME PILIHAN */
+.frame-option {
+    display: inline-block;
+    width: 150px;
+    height: 250px;
+    border: 3px solid white;
+    margin: 10px;
+    cursor: pointer;
+}
 
-    #download {
-      display: none;
-      background: #00c853;
-    }
-  </style>
+/* KAMERA */
+#cameraPage {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* VIDEO */
+video {
+    width: 300px;
+    border: 3px solid white;
+}
+
+/* FRAME PREVIEW */
+.frame {
+    width: 200px;
+    height: 400px;
+    border: 5px solid white;
+    position: relative;
+}
+
+.photo-slot {
+    width: 100%;
+    height: 33.3%;
+    border-bottom: 1px solid gray;
+    position: relative;
+}
+
+.photo-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button {
+    padding: 10px;
+    margin: 10px;
+}
+</style>
+
 </head>
+
 <body>
 
-<h2>📸 Photo Booth</h2>
+<!-- HALAMAN PILIH FRAME -->
+<div id="homePage" class="page active">
+    <h1>Pilih Frame</h1>
 
-<video id="video" autoplay playsinline></video>
-<br>
-<button onclick="startCountdown()">Ambil Foto</button>
+    <div class="frame-option" onclick="selectFrame()"></div>
+    <div class="frame-option" onclick="selectFrame()"></div>
+    <div class="frame-option" onclick="selectFrame()"></div>
+    <div class="frame-option" onclick="selectFrame()"></div>
+</div>
 
-<br><br>
+<!-- HALAMAN KAMERA -->
+<div id="cameraPage" class="page">
 
-<canvas id="canvas"></canvas>
+    <div>
+        <video id="video" autoplay></video><br>
+        <button onclick="takePhoto()">Ambil Foto</button>
+        <button onclick="download()">Download</button>
+    </div>
 
-<br>
-<button id="download" onclick="downloadPhoto()">Download</button>
+    <div class="frame" id="frame">
+        <div class="photo-slot"></div>
+        <div class="photo-slot"></div>
+        <div class="photo-slot"></div>
+    </div>
+
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
 
 <script>
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  const downloadBtn = document.getElementById('download');
 
-  // Akses kamera
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-    .then(stream => video.srcObject = stream)
-    .catch(() => alert("Kamera tidak bisa diakses"));
+let currentSlot = 0;
+let stream;
 
-  // Timer
-  function startCountdown() {
-    let count = 3;
-    const interval = setInterval(() => {
-      document.querySelector("h2").innerText = "Foto dalam " + count;
-      count--;
+/* PILIH FRAME */
+function selectFrame() {
+    document.getElementById("homePage").classList.remove("active");
+    document.getElementById("cameraPage").classList.add("active");
 
-      if (count < 0) {
-        clearInterval(interval);
-        document.querySelector("h2").innerText = "📸 Photo Booth";
-        takePhoto();
-      }
-    }, 1000);
-  }
+    startCamera();
+}
 
-  function takePhoto() {
-    // Set ukuran canvas sesuai kamera
+/* AKTIFKAN KAMERA */
+async function startCamera() {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById("video").srcObject = stream;
+}
+
+/* AMBIL FOTO */
+function takePhoto() {
+    if (currentSlot >= 3) return;
+
+    let video = document.getElementById("video");
+    let canvas = document.getElementById("canvas");
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Gambar foto
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
 
-    // Load frame
-    const frame = new Image();
-    frame.src = "frame.png"; // ⬅️ GANTI dengan file kamu
+    let imgData = canvas.toDataURL("image/png");
 
-    frame.onload = () => {
-      // Gambar frame full sesuai canvas
-      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    let slot = document.getElementsByClassName("photo-slot")[currentSlot];
 
-      // Aktifkan tombol download
-      downloadBtn.style.display = "inline-block";
+    let img = document.createElement("img");
+    img.src = imgData;
 
-      // Simpan blob
-      canvas.toBlob(function(blob) {
-        window.photoBlob = blob;
-      }, 'image/png');
+    let delBtn = document.createElement("button");
+    delBtn.innerText = "X";
+    delBtn.className = "delete-btn";
+
+    delBtn.onclick = () => {
+        slot.innerHTML = "";
+        currentSlot--;
     };
-  }
 
-  function downloadPhoto() {
-    const link = document.createElement('a');
-    link.download = 'photobooth.png';
-    link.href = URL.createObjectURL(window.photoBlob);
-    link.click();
-  }
+    slot.appendChild(img);
+    slot.appendChild(delBtn);
+
+    currentSlot++;
+}
+
+/* DOWNLOAD */
+function download() {
+    let frame = document.getElementById("frame");
+
+    html2canvas(frame).then(canvas => {
+        let link = document.createElement("a");
+        link.download = "photo.png";
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+}
+
 </script>
+
+<!-- LIBRARY UNTUK DOWNLOAD -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 </body>
 </html>
