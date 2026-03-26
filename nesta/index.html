@@ -16,7 +16,6 @@ body {
 .page {
     display: none;
 }
-
 .active {
     display: block;
 }
@@ -81,7 +80,7 @@ video {
     font-size: 12px;
 }
 
-/* FRAME PNG OVERLAY */
+/* FRAME PNG */
 #frameOverlay {
     position: absolute;
     width: 100%;
@@ -89,6 +88,13 @@ video {
     top: 0;
     left: 0;
     pointer-events: none;
+}
+
+/* BUTTON STYLE */
+button {
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
 }
 </style>
 
@@ -111,7 +117,10 @@ video {
 
     <div>
         <video id="video" autoplay></video><br>
+
         <button onclick="takePhoto()">Ambil Foto</button>
+        <button onclick="resetPhotos()">Reset</button>
+        <button onclick="goBack()">Back</button>
         <button onclick="downloadPhoto()">Download</button>
     </div>
 
@@ -120,7 +129,6 @@ video {
         <div class="photo-slot"></div>
         <div class="photo-slot"></div>
 
-        <!-- FRAME PNG -->
         <img id="frameOverlay" src="">
     </div>
 
@@ -184,6 +192,29 @@ function takePhoto() {
     currentSlot++;
 }
 
+/* RESET FOTO */
+function resetPhotos() {
+    let slots = document.getElementsByClassName("photo-slot");
+
+    for (let i = 0; i < slots.length; i++) {
+        slots[i].innerHTML = "";
+    }
+
+    currentSlot = 0;
+}
+
+/* BACK KE HALAMAN AWAL */
+function goBack() {
+    document.getElementById("cameraPage").classList.remove("active");
+    document.getElementById("homePage").classList.add("active");
+
+    resetPhotos();
+
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+}
+
 /* DOWNLOAD */
 function downloadPhoto() {
     let frame = document.getElementById("frame");
@@ -198,7 +229,6 @@ function downloadPhoto() {
 
 </script>
 
-<!-- LIBRARY -->
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 </body>
