@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Booth</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 20px;
+    }
+
+    video, canvas {
+      width: 90%;
+      max-width: 350px;
+      border-radius: 12px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff4d6d;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .result {
+      margin-top: 20px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    #download {
+      display: none;
+      background: #00c853;
+    }
+  </style>
+</head>
+<body>
+
+<h2>📸 Photo Booth</h2>
+
+<video id="video" autoplay playsinline></video>
+<br>
+<button onclick="startCountdown()">Ambil Foto</button>
+
+<br>
+
+<div class="result">
+  <canvas id="canvas"></canvas>
+  <img id="frame" class="frame" src="https://i.ibb.co/3k9YQ0K/frame.png">
+</div>
+
+<br>
+<button id="download" onclick="downloadPhoto()">Download</button>
+
+<script>
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const context = canvas.getContext('2d');
+  const downloadBtn = document.getElementById('download');
+
+  // AKSES KAMERA
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(() => {
+      alert("Kamera tidak bisa diakses");
+    });
+
+  // TIMER 3 DETIK
+  function startCountdown() {
+    let count = 3;
+    const interval = setInterval(() => {
+      document.querySelector("h2").innerText = "Foto dalam " + count;
+      count--;
+
+      if (count < 0) {
+        clearInterval(interval);
+        document.querySelector("h2").innerText = "📸 Photo Booth";
+        takePhoto();
+      }
+    }, 1000);
+  }
+
+  // AMBIL FOTO
+  function takePhoto() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    context.drawImage(video, 0, 0);
+
+    // Tambahkan frame ke canvas
+    const frame = new Image();
+    frame.src = document.getElementById("frame").src;
+
+    frame.onload = () => {
+      context.drawImage(frame, 0, 0, canvas.width, canvas.height);
+      downloadBtn.style.display = "inline-block";
+    };
+  }
+
+  // DOWNLOAD FOTO
+  function downloadPhoto() {
+    const link = document.createElement('a');
+    link.download = 'photo.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+</script>
+
+</body>
+</html>
