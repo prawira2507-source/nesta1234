@@ -35,19 +35,6 @@
       cursor: pointer;
     }
 
-    .result {
-      margin-top: 20px;
-      position: relative;
-      display: inline-block;
-    }
-
-    .frame {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-    }
-
     #download {
       display: none;
       background: #00c853;
@@ -62,12 +49,9 @@
 <br>
 <button onclick="startCountdown()">Ambil Foto</button>
 
-<br>
+<br><br>
 
-<div class="result">
-  <canvas id="canvas"></canvas>
-  <img id="frame" class="frame" src="https://frame.png">
-</div>
+<canvas id="canvas"></canvas>
 
 <br>
 <button id="download" onclick="downloadPhoto()">Download</button>
@@ -75,19 +59,15 @@
 <script>
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
-  const context = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d');
   const downloadBtn = document.getElementById('download');
 
-  // AKSES KAMERA
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-      video.srcObject = stream;
-    })
-    .catch(() => {
-      alert("Kamera tidak bisa diakses");
-    });
+  // Akses kamera
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    .then(stream => video.srcObject = stream)
+    .catch(() => alert("Kamera tidak bisa diakses"));
 
-  // TIMER 3 DETIK
+  // Timer
   function startCountdown() {
     let count = 3;
     const interval = setInterval(() => {
@@ -102,28 +82,36 @@
     }, 1000);
   }
 
-  // AMBIL FOTO
   function takePhoto() {
+    // Set ukuran canvas sesuai kamera
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    context.drawImage(video, 0, 0);
+    // Gambar foto
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Tambahkan frame ke canvas
+    // Load frame
     const frame = new Image();
-    frame.src = document.getElementById("frame").src;
+    frame.src = "frame.png"; // ⬅️ GANTI dengan file kamu
 
     frame.onload = () => {
-      context.drawImage(frame, 0, 0, canvas.width, canvas.height);
+      // Gambar frame full sesuai canvas
+      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+
+      // Aktifkan tombol download
       downloadBtn.style.display = "inline-block";
+
+      // Simpan blob
+      canvas.toBlob(function(blob) {
+        window.photoBlob = blob;
+      }, 'image/png');
     };
   }
 
-  // DOWNLOAD FOTO
   function downloadPhoto() {
     const link = document.createElement('a');
-    link.download = 'photo.png';
-    link.href = canvas.toDataURL();
+    link.download = 'photobooth.png';
+    link.href = URL.createObjectURL(window.photoBlob);
     link.click();
   }
 </script>
